@@ -1,195 +1,339 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+﻿
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <string.h>
 
 struct Node {
-	int data;
-	struct Node* left;
-	struct Node* right;
+    int data;
+    struct Node* left;
+    struct Node* right;
 };
 
 struct Node* root;
 
-// 1. Стандартная функция создания дерева из методички (разрешает дубликаты)
+// 1. Стандартное добавление (разрешены дубликаты)
 struct Node* CreateTree(struct Node* root, struct Node* r, int data)
 {
-	if (r == NULL)
-	{
-		r = (struct Node*)malloc(sizeof(struct Node));
-		if (r == NULL)
-		{
-			printf("Ошибка выделения памяти");
-			exit(0);
-		}
+    if (r == NULL)
+    {
+        r = (struct Node*)malloc(sizeof(struct Node));
+        if (r == NULL)
+        {
+            printf("Ошибка выделения памяти");
+            exit(0);
+        }
 
-		r->left = NULL;
-		r->right = NULL;
-		r->data = data;
+        r->left = NULL;
+        r->right = NULL;
+        r->data = data;
 
-		if (root == NULL) return r;
+        if (root == NULL) return r;
 
-		if (data > root->data) root->left = r;
-		else root->right = r;
-		return r;
-	}
+        if (data > root->data) root->left = r;
+        else root->right = r;
 
-	if (data > r->data)
-		CreateTree(r, r->left, data);
-	else
-		CreateTree(r, r->right, data);
+        return r;
+    }
 
-	return root;
+    if (data > r->data)
+        CreateTree(r, r->left, data);
+    else
+        CreateTree(r, r->right, data);
+
+    return root;
 }
 
-// Задание 3*: Модифицированная функция добавления БЕЗ дубликатов
+// 2. Добавление без дубликатов (Задание 3*)
 struct Node* CreateTreeNoDuplicates(struct Node* root, struct Node* r, int data)
 {
-	if (r == NULL)
-	{
-		r = (struct Node*)malloc(sizeof(struct Node));
-		if (r == NULL)
-		{
-			printf("Ошибка выделения памяти");
-			exit(0);
-		}
+    if (r == NULL)
+    {
+        r = (struct Node*)malloc(sizeof(struct Node));
+        if (r == NULL)
+        {
+            printf("Ошибка выделения памяти");
+            exit(0);
+        }
 
-		r->left = NULL;
-		r->right = NULL;
-		r->data = data;
+        r->left = NULL;
+        r->right = NULL;
+        r->data = data;
 
-		if (root == NULL) return r;
+        if (root == NULL) return r;
 
-		if (data > root->data) root->left = r;
-		else root->right = r;
-		return r;
-	}
+        if (data > root->data) root->left = r;
+        else root->right = r;
 
-	// Проверка на дубликат: если такое число уже есть, ничего не добавляем
-	if (data == r->data)
-	{
-		printf("  [!] Элемент %d уже существует в дереве и не был добавлен.\n", data);
-		return root;
-	}
+        return r;
+    }
 
-	if (data > r->data)
-		CreateTreeNoDuplicates(r, r->left, data);
-	else
-		CreateTreeNoDuplicates(r, r->right, data);
+    if (data == r->data)
+    {
+        printf("Элемент %d уже существует и не был добавлен.\n", data);
+        return root;
+    }
 
-	return root;
+    if (data > r->data)
+        CreateTreeNoDuplicates(r, r->left, data);
+    else
+        CreateTreeNoDuplicates(r, r->right, data);
+
+    return root;
 }
 
-// Задание 1: Функция поиска значения в дереве
-// Возвращает указатель на найденный узел или NULL, если элемент не найден 676767
+// 3. Поиск элемента (Задание 1)
 struct Node* SearchTree(struct Node* r, int key)
 {
-	if (r == NULL || r->data == key)
-	{
-		return r;
-	}
+    if (r == NULL || r->data == key)
+        return r;
 
-	// Двигаемся по той же логике, по которой строилось дерево в CreateTree
-	if (key > r->data)
-		return SearchTree(r->left, key);
-	else
-		return SearchTree(r->right, key);
+    if (key > r->data)
+        return SearchTree(r->left, key);
+    else
+        return SearchTree(r->right, key);
 }
 
-// Задание 2: Функция подсчёта числа вхождений заданного элемента в дерево
-int CountOccurrences(struct Node* r, int key)
+// 4. Подсчёт вхождений с выводом уровней (Задание 2)
+int CountOccurrences(struct Node* r, int key, int level)
 {
-	if (r == NULL)
-	{
-		return 0;
-	}
+    if (r == NULL)
+        return 0;
 
-	int count = (r->data == key) ? 1 : 0;
+    int count = 0;
 
-	// В CreateTree при data == r->data элемент отправляется в правую ветку (else -> r->right).
-	// Поэтому если key > r->data, элементы могут быть только слева.
-	// А если key <= r->data (включая совпадения), продолжаем искать справа.
-	if (key > r->data)
-		return count + CountOccurrences(r->left, key);
-	else
-		return count + CountOccurrences(r->right, key);
+    if (r->data == key)
+    {
+        printf("Найден элемент %d на уровне %d\n", key, level);
+        count = 1;
+    }
+
+    if (key > r->data)
+        return count + CountOccurrences(r->left, key, level + 1);
+    else
+        return count + CountOccurrences(r->right, key, level + 1);
 }
 
-// Функция вывода дерева на экран из методички
-void print_tree(struct Node* r, int l)
+// Вертикальный вывод дерева с указанием уровней
+int treeHeight(struct Node* r)
 {
-	if (r == NULL)
-	{
-		return;
-	}
+    if (r == NULL)
+        return 0;
 
-	print_tree(r->right, l + 1);
-	for (int i = 0; i < l; i++)
-	{
-		printf("   "); // Увеличено до 3 пробелов для более наглядного отображения уровней
-	}
+    int leftHeight = treeHeight(r->left);
+    int rightHeight = treeHeight(r->right);
 
-	printf("%d\n", r->data);
-	print_tree(r->left, l + 1);
+    return 1 + (leftHeight > rightHeight ? leftHeight : rightHeight);
 }
 
+int countNodes(struct Node* r)
+{
+    if (r == NULL)
+        return 0;
+
+    return 1 + countNodes(r->left) + countNodes(r->right);
+}
+
+int maxLabelWidth(struct Node* r, int level)
+{
+    if (r == NULL)
+        return 0;
+
+    char label[50];
+    snprintf(label, sizeof(label), "%d[L%d]", r->data, level);
+
+    int width = (int)strlen(label);
+
+    int leftWidth = maxLabelWidth(r->left, level + 1);
+    int rightWidth = maxLabelWidth(r->right, level + 1);
+
+    if (leftWidth > width) width = leftWidth;
+    if (rightWidth > width) width = rightWidth;
+
+    return width;
+}
+
+void drawTree(struct Node* r, int level, int start,
+    int cellWidth, char** canvas)
+{
+    if (r == NULL)
+        return;
+
+    int leftCount = countNodes(r->left);
+
+    int index = start + leftCount;
+    int x = index * cellWidth + cellWidth / 2;
+    int y = level * 2;
+
+    char label[50];
+    snprintf(label, sizeof(label), "%d[L%d]", r->data, level);
+
+    int len = (int)strlen(label);
+    int pos = x - len / 2;
+
+    for (int i = 0; i < len; i++)
+        canvas[y][pos + i] = label[i];
+
+    if (r->left != NULL)
+    {
+        int childIndex = start + countNodes(r->left->left);
+        int childX = childIndex * cellWidth + cellWidth / 2;
+
+        canvas[y + 1][(x + childX) / 2] = '/';
+
+        drawTree(r->left, level + 1, start,
+            cellWidth, canvas);
+    }
+
+    if (r->right != NULL)
+    {
+        int rightStart = index + 1;
+        int childIndex = rightStart + countNodes(r->right->left);
+        int childX = childIndex * cellWidth + cellWidth / 2;
+
+        canvas[y + 1][(x + childX) / 2] = '\\';
+
+        drawTree(r->right, level + 1, rightStart,
+            cellWidth, canvas);
+    }
+}
+
+// Вертикальный вывод бинарного дерева
+void print_tree_vertical(struct Node* r)
+{
+    if (r == NULL)
+    {
+        printf("Дерево пустое.\n");
+        return;
+    }
+
+    int height = treeHeight(r);
+    int nodes = countNodes(r);
+
+    int cellWidth = maxLabelWidth(r, 0) + 2;
+    int width = nodes * cellWidth;
+    int rows = height * 2 - 1;
+
+    char** canvas = (char**)malloc(rows * sizeof(char*));
+
+    if (canvas == NULL)
+    {
+        printf("Ошибка выделения памяти.\n");
+        return;
+    }
+
+    for (int i = 0; i < rows; i++)
+    {
+        canvas[i] = (char*)malloc(width + 1);
+
+        if (canvas[i] == NULL)
+        {
+            printf("Ошибка выделения памяти.\n");
+
+            for (int j = 0; j < i; j++)
+                free(canvas[j]);
+
+            free(canvas);
+            return;
+        }
+
+        for (int j = 0; j < width; j++)
+            canvas[i][j] = ' ';
+
+        canvas[i][width] = '\0';
+    }
+
+    drawTree(r, 0, 0, cellWidth, canvas);
+
+    for (int i = 0; i < rows; i++)
+    {
+        int end = width - 1;
+
+        while (end >= 0 && canvas[i][end] == ' ')
+            end--;
+
+        for (int j = 0; j <= end; j++)
+            printf("%c", canvas[i][j]);
+
+        printf("\n");
+    }
+
+    for (int i = 0; i < rows; i++)
+        free(canvas[i]);
+
+    free(canvas);
+}
 int main()
 {
-	setlocale(LC_ALL, "");
-	int D, start = 1, mode = 1;
-	int searchKey;
+    setlocale(LC_ALL, "");
 
-	root = NULL;
+    int D, start = 1, mode = 1;
+    int searchKey;
 
-	printf("Выберите режим построения дерева:\n");
-	printf("1 - Стандартный (разрешены одинаковые элементы — для проверки подсчёта вхождений)\n");
-	printf("2 - Без дубликатов (Задание 3* — исключение одинаковых элементов)\n");
-	printf("Ваш выбор: ");
-	scanf_s("%d", &mode);
+    root = NULL;
 
-	printf("\n-1 - окончание построения дерева\n");
-	while (start)
-	{
-		printf("Введите число: ");
-		scanf_s("%d", &D);
-		if (D == -1)
-		{
-			printf("Построение дерева окончено\n\n");
-			start = 0;
-		}
-		else
-		{
-			if (mode == 2)
-				root = CreateTreeNoDuplicates(root, root, D);
-			else
-				root = CreateTree(root, root, D);
-		}
-	}
+    printf("Выберите режим построения дерева:\n");
+    printf("1 - Стандартный (разрешены дубликаты)\n");
+    printf("2 - Без дубликатов\n");
+    printf("Ваш выбор: ");
+    scanf_s("%d", &mode);
 
-	printf("Построенное дерево:\n");
-	print_tree(root, 0);
+    printf("\n-1 - окончание построения дерева\n");
 
-	// Проверка Задания 1 и Задания 2
-	printf("\n--- Поиск и подсчёт элементов ---\n");
-	printf("Введите значение для поиска в дереве: ");
-	scanf_s("%d", &searchKey);
+    while (start)
+    {
+        printf("Введите число: ");
+        scanf_s("%d", &D);
 
-	// 1. Поиск элемента
-	struct Node* found = SearchTree(root, searchKey);
-	if (found != NULL)
-	{
-		printf("Результат поиска: Элемент %d НАЙДЕН в дереве (адрес узла: %p).\n", found->data, (void*)found);
-	}
-	else
-	{
-		printf("Результат поиска: Элемент %d НЕ найден в дереве.\n", searchKey);
-	}
+        if (D == -1)
+        {
+            printf("Построение дерева окончено\n\n");
+            start = 0;
+        }
+        else
+        {
+            if (mode == 2)
+                root = CreateTreeNoDuplicates(root, root, D);
+            else
+                root = CreateTree(root, root, D);
+        }
+    }
 
-	// 2. Подсчёт вхождений
-	int count = CountOccurrences(root, searchKey);
-	printf("Количество вхождений элемента %d в дерево: %d\n", searchKey, count);
+    printf("\nПостроенное дерево:\n");
+    print_tree_vertical(root);
 
-	printf("\nВведите любое число для выхода: ");
-	scanf_s("%d", &D);
-	return 0;
+    printf("\n--- Поиск и подсчёт элементов ---\n");
+    printf("Введите значение для поиска: ");
+    scanf_s("%d", &searchKey);
+
+    struct Node* found = SearchTree(root, searchKey);
+
+    if (found != NULL)
+    {
+        printf("\nРезультат поиска: элемент %d НАЙДЕН.\n",
+            found->data);
+    }
+    else
+    {
+        printf("\nРезультат поиска: элемент %d НЕ найден.\n",
+            searchKey);
+    }
+
+    printf("\nУровни расположения найденных элементов:\n");
+
+    int count = CountOccurrences(root, searchKey, 0);
+
+    if (count == 0)
+    {
+        printf("Совпадений не найдено.\n");
+    }
+
+    printf("\nКоличество вхождений элемента %d: %d\n",
+        searchKey, count);
+
+    printf("\nВведите любое число для выхода: ");
+    scanf_s("%d", &D);
+
+    return 0;
 }
